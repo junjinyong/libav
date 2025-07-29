@@ -35,12 +35,27 @@
 static av_always_inline av_const int MULL(int a, int b, unsigned shift)
 {
     int rt, dummy;
+// added by junjinyong on 25.07.29
+    if (__builtin_constant_p(shift))
+//
     __asm__ (
         "imull %3               \n\t"
         "shrdl %4, %%edx, %%eax \n\t"
         :"=a"(rt), "=d"(dummy)
-        :"a"(a), "rm"(b), "ci"((uint8_t)shift)
+// modified by junjinyong on 25.07.29
+//        :"a"(a), "rm"(b), "ci"((uint8_t)shift)
+        :"a"(a), "rm"(b), "i"(shift & 0x1F)
+//
     );
+// added by junjinyong on 25.07.29
+    else
+        __asm__ (
+            "imull %3               \n\t"
+	    "shrdl %4, %%edx, %%eax \n\t"
+	    :"=a"(rt), "=d"(dummy)
+	    :"a"(a), "rm"(b), "c"((uint8_t)shift)
+	);
+//
     return rt;
 }
 
@@ -113,19 +128,45 @@ __asm__ volatile(\
 // avoid +32 for shift optimization (gcc should do that ...)
 #define NEG_SSR32 NEG_SSR32
 static inline  int32_t NEG_SSR32( int32_t a, int8_t s){
+// added by junjinyong on 25.07.29
+    if (__builtin_constant_p(s))
+//
     __asm__ ("sarl %1, %0\n\t"
          : "+r" (a)
-         : "ic" ((uint8_t)(-s))
+// modified by junjinyong on 25.07.29
+//         : "ic" ((uint8_t)(-s))
+         : "i" (-s & 0x1F)
+//
     );
+// added by junjinyong on 27.07.29
+    else
+        __asm__ ("sarl %1, %0\n\t"
+             : "+r" (a)
+             : "c" ((uint8_t)(-s))
+        );     
+//
     return a;
 }
 
 #define NEG_USR32 NEG_USR32
 static inline uint32_t NEG_USR32(uint32_t a, int8_t s){
+// added by junjinyong on 25.07.29
+    if (__builtin_constant_p(s))
+//
     __asm__ ("shrl %1, %0\n\t"
          : "+r" (a)
-         : "ic" ((uint8_t)(-s))
+// modified by junjinyong on 25.07.29
+//         : "ic" ((uint8_t)(-s))
+         : "i" (-s & 0x1F)
+//
     );
+// added by junjinyong on 25.07.29
+    else
+        __asm__ ("shrl %1, %0\n\t"
+             : "+r" (a)
+	     : "c" ((uint8_t)(-s))
+	);
+//
     return a;
 }
 
